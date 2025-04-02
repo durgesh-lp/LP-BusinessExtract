@@ -4,5 +4,10 @@ G-Maps-Extractor-10-restaurants-2025-02-10.csv
 names.json
 restaurants_leyton.csv
 credentials_prod.json
-credentials.json
+credentials_dev.json
 businesses.json
+businesses_with_emails2.csv
+businesses_with_emails.csv
+test.csv
+E98.csv
+.gitignore
