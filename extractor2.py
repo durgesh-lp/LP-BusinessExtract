@@ -104,7 +104,7 @@ async def extract_business_data(file_path):
     print("== Fetched data from CSV ==")
 
     # Initialize Firebase
-    cred = credentials.Certificate("credentials_dev.json")
+    cred = credentials.Certificate("credentials_prod.json")
     firebase_admin.initialize_app(cred)
     db = firestore.client()
     registered_vendors = fetch_registered_vendors()
@@ -112,8 +112,10 @@ async def extract_business_data(file_path):
     
     #postcode_pattern = r"E\d{2} \w{3}"
     postcode_pattern = r"([Gg][Ii][Rr] 0[Aa]{2})|((([A-Za-z][0-9]{1,2})|(([A-Za-z][A-Ha-hJ-Yj-y][0-9]{1,2})|(([A-Za-z][0-9][A-Za-z])|([A-Za-z][A-Ha-hJ-Yj-y][0-9][A-Za-z]?))))\s?[0-9][A-Za-z]{2})"
-
+    count = 0
     for _, row in df_selected.iterrows():
+        if count==10:
+            return
         postcode_match = re.search(postcode_pattern, row["Fulladdress"])
         postcode = postcode_match.group() if postcode_match else None
         doc_ref = db.collection("vendors").document()
@@ -145,7 +147,7 @@ async def extract_business_data(file_path):
             "email": email if email else "",
             "additional_emails": additional_emails if additional_emails else "",
             "endTime": firestore.SERVER_TIMESTAMP,
-            "images": hdImageUrl,
+            "images": [hdImageUrl],
             "isVerified": True,
             "latitude": row["Latitude"],
             "line1": row["Street"],
@@ -174,13 +176,13 @@ async def extract_business_data(file_path):
         if isVendorExists:
             print(f"Already exists: {row['Name']}")
         else:
+            count+=1
             doc_ref.set(business_data)
-            #send_shop_onboard_notification(row["Fulladdress"], row["Name"], doc_id)
+            send_shop_onboard_notification(row["Fulladdress"], row["Name"], doc_id)
             print(f"Vendor added: {row['Name']}")
             
     """ df_selected.to_csv(output_json, index=False)
     print(f"\n✅ Data successfully saved to {output_json}") """
-
 
 
 def send_shop_onboard_notification(address: str, name: str, vendor_id: str):
@@ -345,4 +347,4 @@ def resize_google_image_url(image_url: str, scale_factor: int = 7):
 
 # Example Usage
 #extract_business_data("test.csv")
-asyncio.run(extract_business_data("test.csv"))
+asyncio.run(extract_business_data("E98.csv"))
