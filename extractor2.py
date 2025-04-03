@@ -179,6 +179,7 @@ async def extract_business_data(file_path):
             count+=1
             doc_ref.set(business_data)
             send_shop_onboard_notification(row["Fulladdress"], row["Name"], doc_id)
+            registered_vendors.append(row["Name"])
             print(f"Vendor added: {row['Name']}")
             
     """ df_selected.to_csv(output_json, index=False)
