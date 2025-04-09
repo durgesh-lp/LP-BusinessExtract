@@ -116,6 +116,10 @@ async def extract_business_data(file_path):
     for _, row in df_selected.iterrows():
         if count==10:
             return
+        isVendorExists = row["Name"] in registered_vendors
+        if isVendorExists:
+            print(f"Already exists: {row['Name']}")
+            continue
         postcode_match = re.search(postcode_pattern, row["Fulladdress"])
         postcode = postcode_match.group() if postcode_match else None
         doc_ref = db.collection("vendors").document()
@@ -318,34 +322,51 @@ def convert_hours_string_to_dict(hours_string: str):
 
     return hours_dict
 
-
 def resize_google_image_url(image_url: str, scale_factor: int = 7):
     """
     Modifies a Google image URL to change the width (w) and height (h) by a given scale factor.
+    
+    This function supports both patterns `w80-h80` and `w=80&h=80` in the image URL.
 
     :param image_url: The original Google image URL.
-    :param scale_factor: The factor by which to multiply the dimensions (default: 3x).
+    :param scale_factor: The factor by which to multiply the dimensions (default: 7x).
     :return: The modified URL with updated dimensions.
     """
+    
+    # Regular expression to find both width (w) and height (h) patterns
+    pattern_1 = r"w(\d+)-h(\d+)"  # Pattern for 'w80-h80'
+    pattern_2 = r"w=(\d+)&h=(\d+)"  # Pattern for 'w=80&h=80'
 
-    # Regular expression to find width (w) and height (h) parameters
-    pattern = r"w(\d+)-h(\d+)"
-    match = re.search(pattern, image_url)
-
-    if match:
-        # Extract current width and height
-        width, height = int(match.group(1)), int(match.group(2))
-
+    # Try to match the first pattern
+    match_1 = re.search(pattern_1, image_url)
+    if match_1:
+        # Extract current width and height from 'w80-h80' pattern
+        width, height = int(match_1.group(1)), int(match_1.group(2))
+        
         # Scale dimensions
         new_width, new_height = width * scale_factor, height * scale_factor
-
+        
         # Replace in URL
-        updated_url = re.sub(pattern, f"w{new_width}-h{new_height}", image_url)
-
+        updated_url = re.sub(pattern_1, f"w{new_width}-h{new_height}", image_url)
         return updated_url
 
-    return image_url  # Return original if no match found
+    # Try to match the second pattern
+    match_2 = re.search(pattern_2, image_url)
+    if match_2:
+        # Extract current width and height from 'w=80&h=80' pattern
+        width, height = int(match_2.group(1)), int(match_2.group(2))
+        
+        # Scale dimensions
+        new_width, new_height = width * scale_factor, height * scale_factor
+        
+        # Replace in URL
+        updated_url = re.sub(pattern_2, f"w={new_width}&h={new_height}", image_url)
+        return updated_url
+
+    # If no match found, return original URL
+    return image_url
+
 
 # Example Usage
 #extract_business_data("test.csv")
-asyncio.run(extract_business_data("E98.csv"))
+asyncio.run(extract_business_data("E20.csv"))
